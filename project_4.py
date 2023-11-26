@@ -5,6 +5,7 @@
 
 
 # import all necessary dependencies
+from logging import logProcesses
 from asyncore import loop
 from turtle import mode
 import pandas as pd
@@ -20,15 +21,6 @@ from tensorflow.keras.models import Sequential
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 
-# In[68]:
-
-
-
-
-
-
-
-
 
 # read in the four raw data files
 season_2015_df = pd.read_excel('wr_season_2015.xlsx')
@@ -42,14 +34,8 @@ season_2021_df = pd.read_excel('wr_season_2021.xlsx')
 
 # ## Data Cleaning
 
-# In[69]:
-
-
 # preview new dataframe
 season_2015_df.head()
-
-
-# In[70]:
 
 
 # drop rank column from all dataframes since we don't need this value for the model
@@ -62,17 +48,12 @@ season_2020_df = season_2020_df.drop(columns=['Rank'])
 season_2021_df = season_2021_df.drop(columns=['Rank'])
 
 
-# In[71]:
-
-
 # rename columns to be clear terminology
 season_2015_df = season_2015_df.rename(columns={'Pos': 'Position', 'GMS': 'Games', 'REC': 'Receptions', 'TGTS': 'Targets', 'PCT': 'Percentage',
                                'YDS': 'Yards', 'TD': 'Touchdowns', 'LNG': 'Long', 'Y/T': 'Yards_per_target', 'Y/R': 'Yards_per_reception', 'ATT': 'Attempts',
                                'TD.1': 'Rushing_touchdown', 'YDS.1': 'Rushing_yards', 'AVG': 'Average_rushing_yards', 'FUM': 'Fumbles', 'LST': 'Lost_yards',
                                'FPTS/G': 'Fantasy_points_per_game', 'FPTS': 'Fantasy_points'})
 
-
-# In[72]:
 
 
 # rename columns to be clear terminology
@@ -82,8 +63,6 @@ season_2016_df = season_2016_df.rename(columns={'Pos': 'Position', 'GMS': 'Games
                                'FPTS/G': 'Fantasy_points_per_game', 'FPTS': 'Fantasy_points'})
 
 
-# In[73]:
-
 
 # rename columns to be clear terminology
 season_2017_df = season_2017_df.rename(columns={'Pos': 'Position', 'GMS': 'Games', 'REC': 'Receptions', 'TGTS': 'Targets', 'PCT': 'Percentage',
@@ -91,8 +70,6 @@ season_2017_df = season_2017_df.rename(columns={'Pos': 'Position', 'GMS': 'Games
                                'TD.1': 'Rushing_touchdown', 'YDS.1': 'Rushing_yards', 'AVG': 'Average_rushing_yards', 'FUM': 'Fumbles', 'LST': 'Lost_yards',
                                'FPTS/G': 'Fantasy_points_per_game', 'FPTS': 'Fantasy_points'})
 
-
-# In[74]:
 
 
 # rename columns to be clear terminology
@@ -102,8 +79,6 @@ season_2018_df = season_2018_df.rename(columns={'Pos': 'Position', 'GMS': 'Games
                                'FPTS/G': 'Fantasy_points_per_game', 'FPTS': 'Fantasy_points'})
 
 
-# In[75]:
-
 
 # rename columns to be clear terminology
 season_2019_df = season_2019_df.rename(columns={'Pos': 'Position', 'GMS': 'Games', 'REC': 'Receptions', 'TGTS': 'Targets', 'PCT': 'Percentage',
@@ -111,8 +86,6 @@ season_2019_df = season_2019_df.rename(columns={'Pos': 'Position', 'GMS': 'Games
                                'TD.1': 'Rushing_touchdown', 'YDS.1': 'Rushing_yards', 'AVG': 'Average_rushing_yards', 'FUM': 'Fumbles', 'LST': 'Lost_yards',
                                'FPTS/G': 'Fantasy_points_per_game', 'FPTS': 'Fantasy_points'})
 
-
-# In[76]:
 
 
 # rename columns to be clear terminology
@@ -122,8 +95,6 @@ season_2020_df = season_2020_df.rename(columns={'Pos': 'Position', 'GMS': 'Games
                                'FPTS/G': 'Fantasy_points_per_game', 'FPTS': 'Fantasy_points'})
 
 
-# In[77]:
-
 
 # rename columns to be clear terminology
 season_2021_df = season_2021_df.rename(columns={'Pos': 'Position', 'GMS': 'Games', 'TGTS': 'Targets', 'REC': 'Receptions', 'PCT': 'Percentage',
@@ -131,15 +102,6 @@ season_2021_df = season_2021_df.rename(columns={'Pos': 'Position', 'GMS': 'Games
                                'TD.1': 'Rushing_touchdown', 'YDS.1': 'Rushing_yards', 'AVG': 'Average_rushing_yards', 'FUM': 'Fumbles', 'LST': 'Lost_yards',
                                'FPTS/G': 'Fantasy_points_per_game', 'FPTS': 'Fantasy_points'})
 
-
-# In[78]:
-
-
-# check to make sure columns have been renamed
-season_2015_df
-
-
-# In[79]:
 
 
 # add column to each dataframe that contains the year of play
@@ -345,93 +307,108 @@ NO_LOOP = ['Touchdowns', 'Name', 'Team', 'Position', 'Year']
 columns_to_loop_through = results.drop(columns=NO_LOOP)
 DROP_COLUMNS = ['Team', 'Position', 'Year']
 all_columns_df = results.drop(columns=DROP_COLUMNS)
+touchdown_bins = [-1, 3, 6, 9, 12, 15, 100]
+bin_labels = [1,2,3,4,5,6]
+
 highest_accuracy = 0
+highest_column_dropped = None
+highest_neural_num = 0
+third_layer_used = False
+
 # clean_results = results.drop(columns=['Team', 'Position', 'Year'])
 all_columns_df = all_columns_df.set_index('Name')
 
+THIRD_LAYER = [True, False]
+
+num_of_neurons = [(100, 70), (70, 40), (40, 10)]
+
 for COLUMN in columns_to_loop_through:
-    # for add_extra_layers in THIRD_LAYER:
-        loop_results = all_columns_df
-        loop_results.drop(columns=COLUMN)
-        print("HEARHEAR")
-        print(loop_results.columns)
-        #loop_results = loop_results.drop(columns=['Team', 'Position', 'Year'])
+    for add_extra_layers in THIRD_LAYER:
+        for neuron_nums in num_of_neurons:
+            loop_results = all_columns_df
+            loop_results.drop(columns=COLUMN)
+            print("HEARHEAR")
+            print(loop_results.columns)
+            #loop_results = loop_results.drop(columns=['Team', 'Position', 'Year'])
 
 
-        # In[82]:
-        print("FINDME")
-        print(loop_results.columns)
+            # In[82]:
+            print("FINDME")
+            print(loop_results.columns)
 
-        # in order to change from binary to regular touchdowns, remove below line and change y var to 'Touchdowns'
-        # and change x var to drop only touchdowns
+            # in order to change from binary to regular touchdowns, remove below line and change y var to 'Touchdowns'
+            # and change x var to drop only touchdowns
 
-        # loop_results['Binary_Touchdowns'] = np.where(loop_results['Touchdowns'] == 0, 0, 1)
+            # loop_results['Binary_Touchdowns'] = np.where(loop_results['Touchdowns'] == 0, 0, 1)
 
-        # y is the target and x is the features
-        # for this case we're training on touchdown performance first
+            # y is the target and x is the features
+            # for this case we're training on touchdown performance first
+            
+            loop_results['Touchdown_bins'] = pd.cut(loop_results['Touchdowns'], bins = touchdown_bins, labels = bin_labels)
+            # y = loop_results['Binary_Touchdowns']
+            y = loop_results['Touchdown_bins']
+            # X = loop_results.drop(columns=['Touchdowns', 'Binary_Touchdowns'])
+            X = loop_results.drop(columns=['Touchdown_bins', 'Touchdowns'])
 
-        #y = loop_results['Binary_Touchdowns']
-        y = loop_results['Touchdowns']
-        # X = loop_results.drop(columns=['Touchdowns', 'Binary_Touchdowns'])
-        X = loop_results.drop(columns=['Touchdowns'])
+            print("FOOBAR1")
+            print(loop_results)
 
-        print("FOOBAR1")
-        print(loop_results)
-
-        # create the training and testing sets
-        X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=.20)
-
-
-        # create a StandardScaler instance
-        scaler = StandardScaler()
-
-        # fit the StandardScaler
-        X_scaler = scaler.fit(X_train)
-
-        # scale the data
-        X_train_scaled = X_scaler.transform(X_train)
-        X_test_scaled = X_scaler.transform(X_test)
-
-        # ## Model Creation
-
-        # define the model
-        nn = Sequential()
-
-        # first hidden layer
-        nn.add(Dense(units=100, activation = 'relu', input_dim = X_test.shape[1]))
-
-        # second hidden layer
-        nn.add(Dense(units=50, activation='relu'))
-
-        # if add_extra_layers:
-        #     # # third hidden layer
-        #     nn.add(Dense(units=20, activation='relu'))
-        #     nn.add(Dense(units=10, activation='relu'))
-
-        # output layer
-        nn.add(Dense(units=1, activation='relu'))
-
-        # check the structure of the model
-        nn.summary()
+            # create the training and testing sets
+            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=.20)
 
 
-        # compile the model - use mae or mse for loss function
-        nn.compile(loss="mse", optimizer="adam", metrics=["accuracy"])
+            # create a StandardScaler instance
+            scaler = StandardScaler()
+
+            # fit the StandardScaler
+            X_scaler = scaler.fit(X_train)
+
+            # scale the data
+            X_train_scaled = X_scaler.transform(X_train)
+            X_test_scaled = X_scaler.transform(X_test)
+
+            # ## Model Creation
+
+            # define the model
+            nn = Sequential()
+
+            # first hidden layer
+            nn.add(Dense(units=neuron_nums[0], activation = 'relu', input_dim = X_test.shape[1]))
+
+            # second hidden layer
+            nn.add(Dense(units=neuron_nums[1], activation='relu'))
+
+            if add_extra_layers:
+                # # third hidden layer
+                nn.add(Dense(units=20, activation='relu'))
+
+            # output layer
+            nn.add(Dense(units=1, activation='relu'))
+
+            # check the structure of the model
+            nn.summary()
 
 
-        # train the model
-        fit_model = nn.fit(X_train_scaled, y_train, epochs=60)
+            # compile the model - use mae or mse for loss function
+            nn.compile(loss="mse", optimizer="adam", metrics=["accuracy"])
 
 
-        # evaluate the model using the test data
-        model_loss, model_accuracy = nn.evaluate(X_test_scaled,y_test,verbose=2)
-        print(f"Loss: {model_loss}, Accuracy: {model_accuracy}")
-
-        if model_accuracy > highest_accuracy:
-            highest_accuracy = model_accuracy
-            print(f'Highest accuracy is: {model_accuracy}')
-            print(f'The column dropped was: {COLUMN}')
+            # train the model
+            fit_model = nn.fit(X_train_scaled, y_train, epochs=60)
 
 
+            # evaluate the model using the test data
+            model_loss, model_accuracy = nn.evaluate(X_test_scaled,y_test,verbose=2)
+            print(f"Loss: {model_loss}, Accuracy: {model_accuracy}")
+
+            if model_accuracy > highest_accuracy:
+                highest_accuracy = model_accuracy
+                highest_column_dropped = COLUMN
+                highest_neural_num = neuron_nums
+                third_layer_used = add_extra_layers
+
+
+print("HIGHEST OVERALL")
+print(f"ACCURACY: {highest_accuracy}, COLUMN_DROPPED {highest_column_dropped}, NEURAL NUM {highest_neural_num}, THIRD LAYER {third_layer_used}")
 
 
