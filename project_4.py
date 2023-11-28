@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
 
 # import all necessary dependencies
-from logging import logProcesses
-from asyncore import loop
-from turtle import mode
 import pandas as pd
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session
@@ -32,7 +27,7 @@ season_2020_df = pd.read_excel('wr_season_2020.xlsx')
 season_2021_df = pd.read_excel('wr_season_2021.xlsx')
 
 
-# ## Data Cleaning
+## Data Cleaning
 
 # preview new dataframe
 season_2015_df.head()
@@ -114,72 +109,43 @@ season_2020_df['Year'] = '2020'
 season_2021_df['Year'] = '2021'
 
 
-# In[80]:
-
-
+# combine all dataframes for seasons that we want to evaluate in the model
 # all_dfs = [season_2015_df, season_2016_df, season_2017_df, season_2018_df, season_2019_df, season_2020_df, season_2021_df]
 # results = pd.concat(all_dfs)
 all_dfs = [season_2018_df, season_2019_df, season_2020_df, season_2021_df]
 results = pd.concat(all_dfs)
 
 
-# In[592]:
-
-
 # write the clean dataframes to csv for future use
 season_2015_df.to_csv('wr_season_2015_clean.csv', index=False)
-
-
-# In[351]:
 
 
 # write the clean dataframes to csv for future use
 season_2016_df.to_csv('wr_season_2016_clean.csv', index=False)
 
 
-# In[263]:
-
-
 # write the clean dataframes to csv for future use
 season_2017_df.to_csv('wr_season_2017_clean.csv', index=False)
-
-
-# In[230]:
 
 
 # write the clean dataframes to csv for future use
 season_2018_df.to_csv('wr_season_2018_clean.csv', index=False)
 
 
-# In[210]:
-
-
 # write the clean dataframes to csv for future use
 season_2019_df.to_csv('wr_season_2019_clean.csv', index=False)
-
-
-# In[211]:
 
 
 # write the clean dataframes to csv for future use
 season_2020_df.to_csv('wr_season_2020_clean.csv', index=False)
 
 
-# In[212]:
-
-
 # write the clean dataframes to csv for future use
 season_2021_df.to_csv('wr_season_2021_clean.csv', index=False)
 
 
-# In[15]:
-
-
 # check datatypes for creating sql table
 season_2019_df.dtypes
-
-
-# In[16]:
 
 
 # create engine to connect to postgresql database
@@ -210,9 +176,6 @@ season_2019_df.to_sql('season_2019', engine, index= False, if_exists='replace', 
                   'Year': String})
 
 
-# In[17]:
-
-
 # write season_2020_df to a postgres table
 season_2020_df.to_sql('season_2020', engine, index= False, if_exists='replace', chunksize = 500,
                  dtype = {'Name': String,
@@ -236,9 +199,6 @@ season_2020_df.to_sql('season_2020', engine, index= False, if_exists='replace', 
                   'Fantasy_points_per_game': Float,
                   'Fantasy_points': Float,
                   'Year': String})
-
-
-# In[18]:
 
 
 # write season_2021_df to a postgres table
@@ -297,44 +257,49 @@ season_2021_df.to_sql('season_2021', engine, index= False, if_exists='replace', 
 #     season_2019_data = pd.read_sql("SELECT * FROM season_2019", con)
 
 
-# ## Data Preprocessing
+## Data Preprocessing
 
-# In[81]:
-
-
-# drop unnecessary columns before fitting model
+# create a list of columns that will not be looped through for model optimization
 NO_LOOP = ['Touchdowns', 'Name', 'Team', 'Position', 'Year']
+
+# drop the columns from the dataframe that we do not want to loop through
 columns_to_loop_through = results.drop(columns=NO_LOOP)
+
+# create a list of columns to drop when training the model
 DROP_COLUMNS = ['Team', 'Position', 'Year']
+
+# drop the columns from the dataframe that we don't want to include whe training the model
 all_columns_df = results.drop(columns=DROP_COLUMNS)
+
+# create bins and labels for touchdown column
 touchdown_bins = [-1, 3, 6, 9, 12, 15, 100]
 bin_labels = [1,2,3,4,5,6]
 
+# set starting variables for tracking highest accuracy values
 highest_accuracy = 0
 highest_column_dropped = None
 highest_neural_num = 0
 third_layer_used = False
 
-# clean_results = results.drop(columns=['Team', 'Position', 'Year'])
+# set Name columns as index to retain this information but not include in in model optimization
 all_columns_df = all_columns_df.set_index('Name')
 
+# create list of options for having or not having a third hidden layer in the model
 THIRD_LAYER = [True, False]
 
+# create list of tuples for possible neuron combinations to try in hidden layers 1 and 2
 num_of_neurons = [(100, 70), (70, 40), (40, 10)]
 
+# start by loopoing through each column as identified in list above
 for COLUMN in columns_to_loop_through:
+    # in each column loop, try with and without a third hidden layer
     for add_extra_layers in THIRD_LAYER:
+        # in each column loop and with both third hidden layer combinations, try different combinations of neurons for hidden layers 1 and 2
         for neuron_nums in num_of_neurons:
             loop_results = all_columns_df
             loop_results.drop(columns=COLUMN)
-            print("HEARHEAR")
             print(loop_results.columns)
             #loop_results = loop_results.drop(columns=['Team', 'Position', 'Year'])
-
-
-            # In[82]:
-            print("FINDME")
-            print(loop_results.columns)
 
             # in order to change from binary to regular touchdowns, remove below line and change y var to 'Touchdowns'
             # and change x var to drop only touchdowns
@@ -345,17 +310,11 @@ for COLUMN in columns_to_loop_through:
             # for this case we're training on touchdown performance first
             
             loop_results['Touchdown_bins'] = pd.cut(loop_results['Touchdowns'], bins = touchdown_bins, labels = bin_labels)
-            # y = loop_results['Binary_Touchdowns']
             y = loop_results['Touchdown_bins']
-            # X = loop_results.drop(columns=['Touchdowns', 'Binary_Touchdowns'])
             X = loop_results.drop(columns=['Touchdown_bins', 'Touchdowns'])
-
-            print("FOOBAR1")
-            print(loop_results)
 
             # create the training and testing sets
             X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=.20)
-
 
             # create a StandardScaler instance
             scaler = StandardScaler()
@@ -411,4 +370,7 @@ for COLUMN in columns_to_loop_through:
 print("HIGHEST OVERALL")
 print(f"ACCURACY: {highest_accuracy}, COLUMN_DROPPED {highest_column_dropped}, NEURAL NUM {highest_neural_num}, THIRD LAYER {third_layer_used}")
 
-
+## ACCURACY 0.7525
+## COLUMN_DROPPED Games
+## NEURAL NUM 70, 40
+## THIRD LAYER True
