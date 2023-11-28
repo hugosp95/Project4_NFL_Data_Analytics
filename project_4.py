@@ -298,51 +298,54 @@ for COLUMN in columns_to_loop_through:
         for neuron_nums in num_of_neurons:
             loop_results = all_columns_df
             loop_results.drop(columns=COLUMN)
-            print(loop_results.columns)
-            #loop_results = loop_results.drop(columns=['Team', 'Position', 'Year'])
-
-            # in order to change from binary to regular touchdowns, remove below line and change y var to 'Touchdowns'
-            # and change x var to drop only touchdowns
-
-            # loop_results['Binary_Touchdowns'] = np.where(loop_results['Touchdowns'] == 0, 0, 1)
-
+    
+    
             # y is the target and x is the features
             # for this case we're training on touchdown performance first
-            
             loop_results['Touchdown_bins'] = pd.cut(loop_results['Touchdowns'], bins = touchdown_bins, labels = bin_labels)
             y = loop_results['Touchdown_bins']
             X = loop_results.drop(columns=['Touchdown_bins', 'Touchdowns'])
 
+
             # create the training and testing sets
             X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=.20)
+
 
             # create a StandardScaler instance
             scaler = StandardScaler()
 
+
             # fit the StandardScaler
             X_scaler = scaler.fit(X_train)
+
 
             # scale the data
             X_train_scaled = X_scaler.transform(X_train)
             X_test_scaled = X_scaler.transform(X_test)
 
-            # ## Model Creation
+
+            ## Model Creation
 
             # define the model
             nn = Sequential()
 
+
             # first hidden layer
             nn.add(Dense(units=neuron_nums[0], activation = 'relu', input_dim = X_test.shape[1]))
+
 
             # second hidden layer
             nn.add(Dense(units=neuron_nums[1], activation='relu'))
 
+
             if add_extra_layers:
-                # # third hidden layer
+                # third hidden layer
                 nn.add(Dense(units=20, activation='relu'))
+
 
             # output layer
             nn.add(Dense(units=1, activation='relu'))
+
 
             # check the structure of the model
             nn.summary()
