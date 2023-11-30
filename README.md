@@ -9,7 +9,7 @@ Note: our project_4.py file was used to find the most optimal model structure, b
 Fantasy rankings, DFS Tools, player stats. FantasyData. (n.d.). https://fantasydata.com/ 
 Where developers learn, share, &amp; build careers. Stack Overflow. (n.d.). https://stackoverflow.com/
 
-# Tableu Links
+# Tableau Links
 https://public.tableau.com/app/profile/catherine.nichols/viz/NFLData_17012926084360/Story1 
 
 https://public.tableau.com/app/profile/hugo.saavedra.pacheco/viz/NFL_17011375012790/Story1?publish=yes 
